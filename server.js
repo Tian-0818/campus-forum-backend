@@ -1,47 +1,41 @@
-require('dotenv').config(); // 加载 .env 文件
-
+// server.js
+require('dotenv').config(); // 加载环境变量
 const express = require('express');
-const connectDB = require('./db'); // 导入数据库连接函数
-
 const mongoose = require('mongoose');
-const User = require('./models/User'); // 确保 User 模型已定义
+const cors = require('cors');
 
-const createTestData = async () => {
-  const user = new User({
-    email: 'test@bipt.edu.cn',
-    password: 'hashedpassword',
-    role: 'student'
-  });
-  await user.save();
-  console.log('Test user created');
-};
-
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('MongoDB Connected');
-    createTestData(); // 插入测试数据
-  })
-  .catch(err => console.error('Connection Failed:', err.message));
-
+// 初始化 Express 应用
 const app = express();
 
-// 连接数据库
-connectDB();
+// 中间件
+app.use(cors()); // 启用 CORS
+app.use(express.json()); // 解析 JSON 请求体
+
+// 连接 MongoDB
+const mongoURI = process.env.MONGODB_URI;
+mongoose.connect(mongoURI)
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.error('MongoDB Connection Error:', err));
 
 // 示例路由
 app.get('/', (req, res) => {
-  res.send('Hello, Campus Forum!');
+  res.send('Welcome to Campus Forum Backend!');
 });
 
+// 用户路由
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users', userRoutes);
+
+// 课程路由
+const courseRoutes = require('./routes/courseRoutes');
+app.use('/api/courses', courseRoutes);
+
+// 评价路由
+const reviewRoutes = require('./routes/reviewRoutes');
+app.use('/api/reviews', reviewRoutes);
+
 // 启动服务器
-const PORT = process.env.PORT || 3001; // 默认端口 3001
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-require('dotenv').config();
-console.log('MONGODB_URI:', process.env.MONGODB_URI); // 调试输出
-
-require('dotenv').config();
-console.log(process.env.MONGODB_URI); // 检查是否加载成功
-console.log(process.env.JWT_SECRET);  // 检查是否加载成功
